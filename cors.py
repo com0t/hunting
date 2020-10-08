@@ -15,7 +15,7 @@ def init_args():
     parse.add_argument('-i', metavar='list-url', help='List domain check CORS')
     parse.add_argument('-x', metavar='method', default='get', help='Method check CORS')
     parse.add_argument('-c', metavar='cookies', help='Ex: ssid=...;name=...')
-    parse.add_argument('-H', metavar='HTTPS headers', help='Ex: header1: ...;header1: ...')
+    parse.add_argument('-H', metavar='HTTPS headers', help='Ex: header1: ...\\nheader1: ...')
     parse.add_argument('-p', metavar='<IP>:<PORT>', help='Ex: 127.0.0.1:8080')
     parse.add_argument('-r', metavar='Burp request', help='Read file Burp request')
     return parse.parse_args()
@@ -82,7 +82,7 @@ def process_burp(file_in=''):
             i = data[line].index(':')
             headers[data[line][:i]] = data[line][i+2:]
         domain = headers['Host']+data[0].split(' ')[1]
-        
+
         if method == 'POST':
             payload = payload[0].split('&')
             for item in payload:
