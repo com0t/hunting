@@ -39,9 +39,9 @@ def create_origin(domain=''):
     list_origin.append('null')
     # list_origin.append(scheme+'://'+'evil'+root_domain)
     # list_origin.append(scheme+'://'+'evil-'+root_domain)
-    list_origin.append(scheme+'://'+root_domain+'evil')
-    list_origin.append(scheme+'://'+root_domain+'-evil')
-    list_origin.append(scheme+'://'+root_domain+'.evil')
+    list_origin.append(root_domain+'evil')
+    list_origin.append(root_domain+'-evil')
+    list_origin.append(root_domain+'.evil')
     return list_origin
 
 def cookies_parser(cookies_in=''):
