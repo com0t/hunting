@@ -116,11 +116,14 @@ def check_cors(domain='', method=[], cookies='', headers='', data='', proxies=''
                 pass
 
             if 'Access-Control-Allow-Origin' in resp.headers.keys():
-                print(f'{fg("violet")}|->{attr("reset")} Domain: {fg("yellow")+domain+attr("reset")} - Method: {fg(82)+m.upper()+attr("reset")} - Origin: {fg("red")+origin+attr("reset")}', end='')
-                if 'Access-Control-Allow-Credentials' in resp.headers.keys() and resp.headers['Access-Control-Allow-Credentials'] == 'true':
-                    print(f' - Allow Cookie: {fg("red")}True{attr("reset")}')
-                elif 'Access-Control-Allow-Credentials' not in resp.headers.keys() or resp.headers['Access-Control-Allow-Credentials'] != 'true':
-                    print(f' - Allow Cookie: {fg(142)}False{attr("reset")}')
+                if resp.headers['Access-Control-Allow-Origin'] == '*' or origin in resp.headers['Access-Control-Allow-Origin']:
+                    if 'Access-Control-Allow-Credentials' in resp.headers.keys() and resp.headers['Access-Control-Allow-Credentials'] == 'true':
+                        if resp.headers['Access-Control-Allow-Origin'] != '*':
+                            print(f'{fg("violet")}|->{attr("reset")} Domain: {fg("yellow")+domain+attr("reset")} - Method: {fg(82)+m.upper()+attr("reset")} - Origin: {fg("red")+origin+attr("reset")}', end='')
+                            print(f' - Allow Cookie: {fg("red")}True{attr("reset")}')
+                    elif 'Access-Control-Allow-Credentials' not in resp.headers.keys() or resp.headers['Access-Control-Allow-Credentials'] != 'true':
+                        print(f'{fg("violet")}|->{attr("reset")} Domain: {fg("yellow")+domain+attr("reset")} - Method: {fg(82)+m.upper()+attr("reset")} - Origin: {fg("red")+origin+attr("reset")}', end='')
+                        print(f' - Allow Cookie: {fg(142)}False{attr("reset")}')
 
 def multi_thread(list_domain, method=[], cookies='', headers='', data='', proxies=''):
     while not list_domain.empty():
