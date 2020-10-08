@@ -117,16 +117,12 @@ def get_cname(domain=''):
     return cnames
 
 def multi_thread(que_domain=None, len_domain=0, output=None):
-    check = True
     while not que_domain.empty():
         domain = que_domain.get()
         output.checking(domain, len_domain-que_domain.qsize(), len_domain)
         if ('http://' not in domain) and ('https://' not in domain):
             domain = 'http://'+domain
         try:
-            if check:
-                output.newLine(attr('reset')+domain+' - Engine: ')
-                check = False
             resp = requests.get(domain, verify=False, timeout=10)
             for engine in can_i_take_over_xyz:
                 if can_i_take_over_xyz[engine] in resp.text:
