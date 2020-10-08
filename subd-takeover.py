@@ -159,8 +159,6 @@ def main():
             list_thread.append(t)
         for t in list_thread:
             t.join()
-    s=''
-    print(s.ljust(os.get_terminal_size().columns - 1), end="\r")
         
 if __name__ == '__main__':
     main()
