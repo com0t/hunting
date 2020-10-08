@@ -123,7 +123,7 @@ def check_cors(domain='', method=[], cookies='', headers='', data='', proxies=''
                     print(f' - Allow Cookie: {fg(142)}False{attr("reset")}')
 
 def multi_thread(list_domain, method=[], cookies='', headers='', data='', proxies=''):
-    while list_domain:
+    while not list_domain.empty():
         domain = list_domain.get()
         check_cors(domain=domain, method=method, cookies=cookies, headers=headers, data=data, proxies=proxies)
 

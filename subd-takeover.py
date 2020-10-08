@@ -145,7 +145,6 @@ def main():
         que_domain = queue.Queue()
         [que_domain.put(domain) for domain in domains]
         num_domain = que_domain.qsize()
-        print(num_domain)
         list_thread = []
         
         if args.t > num_domain:
