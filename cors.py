@@ -4,6 +4,7 @@ import argparse, os
 import requests
 from urllib.parse import urlparse
 from colored import fg, bg, attr
+import queue
 import urllib3
 urllib3.disable_warnings()
 
@@ -18,6 +19,7 @@ def init_args():
     parse.add_argument('-H', metavar='HTTPS headers', help='Ex: header1: ...\\nheader1: ...')
     parse.add_argument('-p', metavar='<IP>:<PORT>', help='Ex: 127.0.0.1:8080')
     parse.add_argument('-r', metavar='Burp request', help='Read file Burp request')
+    parse.add_argument('-t', metavar='number threads', type=int, default=100, help='')
     return parse.parse_args()
 
 def create_origin(domain=''):
@@ -112,6 +114,12 @@ def check_cors(domain='', method=[], cookies='', headers='', data='', proxies=''
             if 'Access-Control-Allow-Origin' in resp.headers.keys():
                 print(f'   {fg("violet")}|->{attr("reset")} Method: {fg(82)+m.upper()+attr("reset")} - Origin: {fg("red")+origin+attr("reset")}')
 
+def multi_thread(list_domain, method=[], cookies='', headers='', data='', proxies=''):
+    while list_domain:
+        domain = list_domain.get()
+        check_cors(domain=domain, method=methods, cookies=cookies, headers=headers, data=data, proxies=proxies)
+
+
 def main():
     args = init_args()
     args.x = [args.x]
@@ -127,7 +135,23 @@ def main():
     elif args.r:
         method, domain, headers, data = process_burp(args.r)
         method = [method]
-        check_cors(domain=domain, method=method, headers=headers, data=data, proxies=proxies)
+        check_cors(domain=domain, method=method, cookies=cookies_parser(args.c), headers=headers, data=data, proxies=proxies)
+    elif args.i:
+        if not os.path.isfile(args.i):
+            exit(f'{args.t} is not file')
+        
+        with open(args.i, 'r') as fp:
+            que = queue.Queue()
+            data = fp.read()
+            data = data.split('\n')
+            [que.put(domain) for domain in data]
+
+            num_thread = args.t
+            if args.t > que.qsize():
+                num_thread = que.qsize()
+
+            for i in range(num_thread):
+                t = threading.Thread(target=multi_thread, args=(que, args.x, cookies_parser(args.c), headers_parser(args.H), proxies, ))
 
 if __name__ == '__main__':
     main()
