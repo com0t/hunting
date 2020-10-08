@@ -6,6 +6,7 @@ import queue
 import requests
 import threading, os
 from colored import fg, bg, attr
+from lib.output import *
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -115,40 +116,49 @@ def get_cname(domain=''):
             break
     return cnames
 
-def multi_thread(que_domain=None, len_domain=0):
+def multi_thread(que_domain=None, len_domain=0, output=None):
+    check = True
     while not que_domain.empty():
         domain = que_domain.get()
-        percent = round(1-que_domain.qsize()/len_domain,4)*100
-        s = fg('yellow')+'%6.2f%%'%(percent)+attr('reset')+' - Checking: '+domain
-        print(s.ljust(os.get_terminal_size().columns - 1), end="\r")
+        output.checking(domain, len_domain-que_domain.qsize(), len_domain)
         if ('http://' not in domain) and ('https://' not in domain):
             domain = 'http://'+domain
         try:
+            if check:
+                output.newLine(attr('reset')+domain+' - Engine: ')
+                check = False
             resp = requests.get(domain, verify=False, timeout=10)
             for engine in can_i_take_over_xyz:
-                # print(domain+' - Engine: '+fg('red')+engine+attr('reset'))
                 if can_i_take_over_xyz[engine] in resp.text:
                     cnames = get_cname(domain)
                     if not cnames and not dns_names[engine]:
-                        print(attr('reset')+domain+' - Engine: '+fg('red')+engine+attr('reset'))
+                        output.newLine(attr('reset')+domain+' - Engine: '+fg('red')+engine+attr('reset'))
                     elif cnames:
                         for dns_name in dns_names[engine]:
                             if dns_name in cnames:
-                                print(attr('reset')+domain+' - Engine: '+fg('red')+engine+attr('reset'))
+                                output.newLine(attr('reset')+domain+' - Engine: '+fg('red')+engine+attr('reset'))
         except:
             pass
 
 def main():
     args = init_args()
+    output = CLIOutput()
     with open(args.i, 'r') as fp:
         domains = fp.read().split('\n')
         domains.remove('')
         que_domain = queue.Queue()
         [que_domain.put(domain) for domain in domains]
-        len_domain = que_domain.qsize()
+        num_domain = que_domain.qsize()
+        print(num_domain)
         list_thread = []
-        for i in range(args.t):
-            t = threading.Thread(target=multi_thread, args=(que_domain, len_domain,))
+        
+        if args.t > num_domain:
+            num_thread = num_domain
+        else:
+            num_thread = args.t
+
+        for i in range(num_thread):
+            t = threading.Thread(target=multi_thread, args=(que_domain, num_domain, output))
             t.start()
             list_thread.append(t)
         for t in list_thread:
