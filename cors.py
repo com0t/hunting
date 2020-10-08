@@ -4,7 +4,7 @@ import argparse, os
 import requests
 from urllib.parse import urlparse
 from colored import fg, bg, attr
-import queue
+import queue, threading
 import urllib3
 urllib3.disable_warnings()
 
@@ -31,13 +31,14 @@ def create_origin(domain=''):
         scheme = 'http'
     else:
         scheme = url_struc.scheme
-    root_domain = url_struc.netloc.split('.')
-    root_domain = root_domain[-2]+'.'+root_domain[-1]
+    # root_domain = url_struc.netloc.split('.')
+    # root_domain = root_domain[-2]+'.'+root_domain[-1]
+    root_domain = domain
 
     list_origin = []
     list_origin.append('null')
-    list_origin.append(scheme+'://'+'evil'+root_domain)
-    list_origin.append(scheme+'://'+'evil-'+root_domain)
+    # list_origin.append(scheme+'://'+'evil'+root_domain)
+    # list_origin.append(scheme+'://'+'evil-'+root_domain)
     list_origin.append(scheme+'://'+root_domain+'evil')
     list_origin.append(scheme+'://'+root_domain+'-evil')
     list_origin.append(scheme+'://'+root_domain+'.evil')
@@ -97,27 +98,34 @@ def check_cors(domain='', method=[], cookies='', headers='', data='', proxies=''
         domain = 'https://'+domain
 
     list_origin = create_origin(domain)
-    print(fg(33)+'[*] Check CORS Domain: '+fg(222)+domain+attr('reset'))
+    # print(fg(33)+'[*] Check CORS Domain: '+fg(222)+domain+attr('reset'))
     for m in method:
         for origin in list_origin:
             headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:54.0) Gecko/20100101 Firefox/54.0'
             headers['Origin'] = origin
-            if m.upper() == 'GET':
-                resp = requests.get(domain, headers=headers, proxies=proxies, cookies=cookies, verify=False)
-            if m.upper() == 'POST':
-                resp = requests.post(domain, headers=headers, proxies=proxies, cookies=cookies, verify=False)
-            if m.upper() == 'PUT':
-                resp = requests.put(domain, headers=headers, proxies=proxies, cookies=cookies, verify=False)
-            if m.upper() == 'DELETE':
-                resp = requests.delete(domain, headers=headers, proxies=proxies, cookies=cookies, verify=False)
+            try:
+                if m.upper() == 'GET':
+                    resp = requests.get(domain, headers=headers, proxies=proxies, cookies=cookies, verify=False)
+                if m.upper() == 'POST':
+                    resp = requests.post(domain, headers=headers, proxies=proxies, cookies=cookies, verify=False)
+                if m.upper() == 'PUT':
+                    resp = requests.put(domain, headers=headers, proxies=proxies, cookies=cookies, verify=False)
+                if m.upper() == 'DELETE':
+                    resp = requests.delete(domain, headers=headers, proxies=proxies, cookies=cookies, verify=False)
+            except:
+                pass
 
             if 'Access-Control-Allow-Origin' in resp.headers.keys():
-                print(f'   {fg("violet")}|->{attr("reset")} Method: {fg(82)+m.upper()+attr("reset")} - Origin: {fg("red")+origin+attr("reset")}')
+                print(f'{fg("violet")}|->{attr("reset")} Domain: {fg("yellow")+domain+attr("reset")} - Method: {fg(82)+m.upper()+attr("reset")} - Origin: {fg("red")+origin+attr("reset")}', end='')
+                if 'Access-Control-Allow-Credentials' in resp.headers.keys() and resp.headers['Access-Control-Allow-Credentials'] == 'true':
+                    print(f' - Allow Cookie: {fg("red")}True{attr("reset")}')
+                elif 'Access-Control-Allow-Credentials' not in resp.headers.keys() or resp.headers['Access-Control-Allow-Credentials'] != 'true':
+                    print(f' - Allow Cookie: {fg(142)}False{attr("reset")}')
 
 def multi_thread(list_domain, method=[], cookies='', headers='', data='', proxies=''):
     while list_domain:
         domain = list_domain.get()
-        check_cors(domain=domain, method=methods, cookies=cookies, headers=headers, data=data, proxies=proxies)
+        check_cors(domain=domain, method=method, cookies=cookies, headers=headers, data=data, proxies=proxies)
 
 
 def main():
@@ -138,8 +146,8 @@ def main():
         check_cors(domain=domain, method=method, cookies=cookies_parser(args.c), headers=headers, data=data, proxies=proxies)
     elif args.i:
         if not os.path.isfile(args.i):
-            exit(f'{args.t} is not file')
-        
+            exit(f'{args.i} is not file')
+
         with open(args.i, 'r') as fp:
             que = queue.Queue()
             data = fp.read()
@@ -151,7 +159,8 @@ def main():
                 num_thread = que.qsize()
 
             for i in range(num_thread):
-                t = threading.Thread(target=multi_thread, args=(que, args.x, cookies_parser(args.c), headers_parser(args.H), proxies, ))
+                t = threading.Thread(target=multi_thread, args=(que, args.x, cookies_parser(args.c), headers_parser(args.H), '', proxies, ))
+                t.start()
 
 if __name__ == '__main__':
     main()
